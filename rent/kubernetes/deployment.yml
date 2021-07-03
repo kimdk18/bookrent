@@ -17,20 +17,31 @@ spec:
     spec:
       containers:
         - name: rent
-          image: bookrentskccacr.azurecr.io/rent:v1.0
+          image: bookrentskccacr.azurecr.io/rent:v1.1
           ports:
             - containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: '/actuator/health'
-              port: 8080
-            initialDelaySeconds: 10
-            timeoutSeconds: 2
-            periodSeconds: 5
-            failureThreshold: 10
+          env:
+            - name: book-url
+              valueFrom:
+                configMapKeyRef:
+                  name: book-cm
+                  key: url
+          resources:
+            limits:
+              cpu: 500m
+            requests:
+              cpu: 250m
+          #readinessProbe:
+          #  httpGet:
+          #    path: '/rents'
+          #    port: 8080
+          #  initialDelaySeconds: 10
+          #  timeoutSeconds: 2
+          #  periodSeconds: 5
+          #  failureThreshold: 10
           livenessProbe:
             httpGet:
-              path: '/actuator/health'
+              path: '/rents'
               port: 8080
             initialDelaySeconds: 120
             timeoutSeconds: 2

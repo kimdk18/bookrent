@@ -67,6 +67,10 @@ spring:
           destination: bookrent
           contentType: application/json
 
+api:
+  url:
+    book: ${book-url}
+
 feign:
   hystrix:
     enabled: true
