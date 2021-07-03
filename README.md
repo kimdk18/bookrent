@@ -629,68 +629,66 @@ http GET localhost:8084/views/1
 
 - GitHub 와 연결 후 로컬빌드를 진행 진행
 ```
-	cd team
+	cd clouddrive
 	mkdir sourcecode
 	cd sourcecode
-	git clone --recurse-submodules https://github.com/21-2-1team/bidding03.git
+	git clone --recurse-submodules https://github.com/kimdk18/bookrent.git
 	
-	cd bidding
-	cd BiddingExamination
+	cd bookrent
+	cd book
 	mvn package
 	
-	cd ../BiddingManagement
+	cd ../rent
 	mvn package
 	
-	cd ../BiddingParticipation
+	cd ../delivery
 	mvn package
 	
-	cd ../MyPage
+	cd ../view
 	mvn package
-	
-	
-	cd ../Notification
-	mvn package
-	
-	
+		
 	cd ../gateway
         mvn package
 ```
 - namespace 등록 및 변경
 ```
-kubectl config set-context --current --namespace=bidding  --> bidding namespace 로 변경
-
-kubectl create ns bidding
+kubectl create ns bookrent
+kubectl config set-context --current --namespace=bookrent  --> 기본 ns를 bookrent 로 변경
 ```
 
 - ACR 컨테이너이미지 빌드
 ```
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/biddingexamination:latest .
+az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/book:v1.0 .
 ```
-![image](https://user-images.githubusercontent.com/70736001/122502677-096cce80-d032-11eb-96e7-84a8024ab45d.png)
+![acr빌드](https://user-images.githubusercontent.com/84000919/124363140-7e681700-dc74-11eb-83c0-829b74c1b443.JPG)
+
 
 나머지 서비스에 대해서도 동일하게 등록을 진행함
 ```
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/biddingmanagement:latest .
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/biddingparticipation:latest .
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/biddingparticipation:latest .
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/mypage:latest  .
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/notification:latest  .
-az acr build --registry user01skccacr --image user01skccacr.azurecr.io/gateway:latest .
+az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/rent:v1.0 .
+az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/delivery:v1.0 .
+az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/view:v1.0 .
+az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/gateway:v1.0 .
 ```
+레지스트리 확인
+
+![레지스트리 확인_1](https://user-images.githubusercontent.com/84000919/124364128-65626480-dc7a-11eb-8498-ce7e91c39889.jpg)
+
 
 - 배포진행
 
-1.bidding/BiddingExamination/kubernetes/deployment.yml 파일 수정 (BiddingManagement/BiddingParticipation/MyPage/Notification/gateway 동일)
+1.deployment.yml 파일 수정 (book/rent/delivery/view/gateway 동일)
 
-![image](https://user-images.githubusercontent.com/70736001/122512566-011d8f00-d044-11eb-8bd5-91d939f7ab1b.png)
+![deploy수정_1](https://user-images.githubusercontent.com/84000919/124363698-d9e7d400-dc77-11eb-91b1-a5d03c9122fe.jpg)
 
-2.bidding/BiddingExamination/kubernetes/service.yaml 파일 수정 (BiddingManagement/BiddingParticipation/MyPage/Notification 동일)
 
-![image](https://user-images.githubusercontent.com/70736001/122512673-26aa9880-d044-11eb-8587-38f8cd261326.png)
+2.service.yaml 파일 수정 (book/rent/delivery/view 동일)
 
-3.bidding/gateway/kubernetes/service.yaml 파일 수정
+![service수정_1](https://user-images.githubusercontent.com/84000919/124363703-dfddb500-dc77-11eb-8d48-db7c45a8cc65.jpg)
 
-![image](https://user-images.githubusercontent.com/70736001/122503123-da0a9180-d032-11eb-9283-224d7860c9c3.png)
+3.service.yaml 파일 수정 (gateway)
+
+![service수정_gateway](https://user-images.githubusercontent.com/84000919/124363707-e53aff80-dc77-11eb-9ed2-96daf5757c43.jpg)
 
 4. 배포작업 수행
 ``` 
@@ -698,26 +696,19 @@ az acr build --registry user01skccacr --image user01skccacr.azurecr.io/gateway:l
 	kubectl apply -f deployment.yml
 	kubectl apply -f service.yaml
 	
-	cd ../../BiddingExamination/kubernetes
+	cd ../../book/kubernetes
 	kubectl apply -f deployment.yml
 	kubectl apply -f service.yaml
 	
-	cd ../../BiddingManagement/kubernetes
+	cd ../../rent/kubernetes
 	kubectl apply -f deployment.yml
 	kubectl apply -f service.yaml
 	
-	
-	cd ../../BiddingParticipation/kubernetes
+	cd ../../delivery/kubernetes
 	kubectl apply -f deployment.yml
 	kubectl apply -f service.yaml
 	
-	
-	cd ../../MyPage/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
-	
-	
-	cd ../../Notification/kubernetes
+	cd ../../view/kubernetes
 	kubectl apply -f deployment.yml
 	kubectl apply -f service.yaml
 ``` 
@@ -726,7 +717,7 @@ az acr build --registry user01skccacr --image user01skccacr.azurecr.io/gateway:l
 ``` 
 kubectl get all
 ``` 
-![image](https://user-images.githubusercontent.com/70736001/122503307-2b1a8580-d033-11eb-83fc-63b0f2154e3b.png)
+![배포결과](https://user-images.githubusercontent.com/84000919/124365056-8ded5d00-dc80-11eb-8124-97b57e3384a1.jpg)
 
 - Kafka 설치
 ``` 
@@ -736,16 +727,21 @@ chmod 700 get_helm.sh
 
 kubectl --namespace kube-system create sa tiller 
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-helm init --service-account tiller
 
 helm repo add incubator https://charts.helm.sh/incubator
 helm repo update
 
 kubectl create ns kafka
-helm install --name my-kafka --namespace kafka incubator/kafka
+helm install my-kafka --namespace kafka incubator/kafka
 
 kubectl get all -n kafka
 ``` 
+
+- topic 생성
+``` 
+kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-zookeeper:2181 --topic bookrent --create --partitions 1 --replication-factor 1
+``` 
+
 설치 후 서비스 재기동
 
 ## Autoscale (HPA)
