@@ -745,14 +745,15 @@ kubectl -n kafka exec my-kafka-0 -- /usr/bin/kafka-topics --zookeeper my-kafka-z
 설치 후 서비스 재기동
 
 ## Autoscale (HPA)
-앞서 CB(Circuit breaker)는 시스템을 안정되게 운영할 수 있게 해줬지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다.
+CB(Circuit breaker)는 시스템을 안정되게 운영할 수 있게 해주지만 사용자의 요청을 100% 받아들여주지 못했기 때문에 이에 대한 보완책으로 자동화된 확장 기능을 적용하고자 한다.
 
-- 리소스에 대한 사용량 정의(bidding/BiddingManagement/kubernetes/deployment.yml)
-![image](https://user-images.githubusercontent.com/70736001/122503960-49cd4c00-d034-11eb-8ab4-b322e7383cc0.png)
+- 리소스에 대한 사용량 정의(bookrent/rent/kubernetes/deployment.yml)
+
+![hpa_resource](https://user-images.githubusercontent.com/84000919/124365291-ee30ce80-dc81-11eb-98d5-828f7a8dc9a2.jpg)
 
 - Autoscale 설정 (request값의 20%를 넘어서면 Replica를 10개까지 동적으로 확장)
 ```
-kubectl autoscale deployment biddingmanagement --cpu-percent=20 --min=1 --max=10
+kubectl autoscale deployment rent --cpu-percent=20 --min=1 --max=10
 ```
 
 - siege 생성 (로드제너레이터 설치)
@@ -762,7 +763,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: siege
-  namespace: bidding
+  namespace: bookrent
 spec:
   containers:
   - name: siege
@@ -771,9 +772,12 @@ EOF
 ```
 - 부하발생 (50명 동시사용자, 30초간 부하)
 ```
-kubectl exec -it pod/siege  -c siege -n bidding -- /bin/bash
-siege -c50 -t30S -v --content-type "application/json" 'http://52.231.8.61:8080/biddingManagements POST {"noticeNo":1,"title":"AAA"}'
+kubectl exec -it pod/siege  -c siege -n bookrent -- /bin/bash
+siege -c50 -t30S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
 ```
+![hpa_siege](https://user-images.githubusercontent.com/84000919/124366113-3b17a380-dc88-11eb-9a89-06253e46f663.jpg)
+
+
 - 모니터링 (부하증가로 스케일아웃되어지는 과정을 별도 창에서 모니터링)
 ```
 watch kubectl get al
@@ -782,51 +786,59 @@ watch kubectl get al
 
 1.테스트전
 
-![image](https://user-images.githubusercontent.com/70736001/122504322-0aebc600-d035-11eb-883f-35110d9d0457.png)
+![hpa_before](https://user-images.githubusercontent.com/84000919/124366116-4b2f8300-dc88-11eb-9b6b-628e01421020.jpg)
 
 2.테스트후
 
-![image](https://user-images.githubusercontent.com/70736001/122504349-1e972c80-d035-11eb-814e-a5ab909215c4.png)
+![hpa_after](https://user-images.githubusercontent.com/84000919/124366121-51256400-dc88-11eb-83ba-505a7e178d92.jpg)
 
-3.부하발생 결과
-
-![image](https://user-images.githubusercontent.com/70736001/122504389-31a9fc80-d035-11eb-976e-f43261d1a8c2.png)
 
 ## Config Map
 ConfigMap을 사용하여 변경가능성이 있는 설정을 관리
 
-- 입찰심사(BiddingExamination) 서비스에서 동기호출(Req/Res방식)로 연결되는 입찰관리(BiddingManagement) 서비스 url 정보 일부를 ConfigMap을 사용하여 구현
+- 대여관리(rent) 서비스에서 동기호출(Req/Res방식)로 연결되는 도서관리(book) 서비스 url 정보 일부를 ConfigMap을 사용하여 구현
 
 - 파일 수정
-  - 입찰심사 소스 (BiddingExamination/src/main/java/bidding/external/BiddingManagementService.java)
+  - 대여관리 소스 (rent/src/main/java/bookrent/external/BookService.java)
 
-![image](https://user-images.githubusercontent.com/70736001/122505096-9dd93000-d036-11eb-91b7-0ec57b6e1b10.png)
+![cm_setting_1](https://user-images.githubusercontent.com/84000919/124366456-f80aff80-dc8a-11eb-8c47-0b68132cfa1b.jpg)
+
 
 - Yaml 파일 수정
-  - application.yml (BiddingExamination/src/main/resources/application.yml)
-  - deploy yml (BiddingExamination/kubernetes/deployment.yml)
+  - application.yml (rent/src/main/resources/application.yml)
 
-![image](https://user-images.githubusercontent.com/70736001/122505177-c5c89380-d036-11eb-91b3-f399547b50ff.png)
+![cm_setting_2](https://user-images.githubusercontent.com/84000919/124366460-ffcaa400-dc8a-11eb-9dc7-ff44e8fcc969.jpg)
+
+  - deploy yml (rent/kubernetes/deployment.yml)
+
+![cm_setting_3](https://user-images.githubusercontent.com/84000919/124366461-048f5800-dc8b-11eb-88d0-4cf63e40fe08.jpg)
+
 
 - Config Map 생성 및 생성 확인
 ```
-kubectl create configmap bidding-cm --from-literal=url=BiddingManagement
+kubectl create configmap book-cm --from-literal=url=book
 kubectl get cm
 ```
 
-![image](https://user-images.githubusercontent.com/70736001/122505221-dc6eea80-d036-11eb-8757-b97f8d75baff.png)
+![cm_2](https://user-images.githubusercontent.com/84000919/124366491-3f918b80-dc8b-11eb-9e78-638db213f33a.jpg)
 
 ```
-kubectl get cm bidding-cm -o yaml
+kubectl get cm book-cm -o yaml
 ```
 
-![image](https://user-images.githubusercontent.com/70736001/122505270-f6103200-d036-11eb-8c96-513f95448989.png)
+![cm_1](https://user-images.githubusercontent.com/84000919/124366475-1c66dc00-dc8b-11eb-9a30-30a3909e9eb4.jpg)
 
 ```
 kubectl get pod
 ```
 
-![image](https://user-images.githubusercontent.com/70736001/122505313-0fb17980-d037-11eb-9b57-c0d14f468a1c.png)
+- rent 재시작 후 cm 생성 전 pod 생성 오류
+
+![cm_before](https://user-images.githubusercontent.com/84000919/124366528-72d41a80-dc8b-11eb-8f47-8f815ee2287e.jpg)
+
+- cm 생성 후 정상 확인
+
+![cm_after](https://user-images.githubusercontent.com/84000919/124366529-7667a180-dc8b-11eb-9a0f-353f21a0d840.jpg)
 
 
 ## Zero-Downtime deploy (Readiness Probe)
