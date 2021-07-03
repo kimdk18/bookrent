@@ -524,12 +524,14 @@ public class BookController {
 # 도서관리(book) 서비스를 잠시 내려놓음 (ctrl+c)
 
 # 대여관리 등록
-http POST localhost:8082/rents bookId=1 userId=1 address=address1http POST localhost:8082/rents bookId=1 userId=1 address=address1
+http POST localhost:8082/rents bookId=1 userId=1 address=address1
 ```
 - BookServiceFallback 호출되어 대여상태(status)가 Fail로 등록
+
 ![rent_book_kill_fallback_1](https://user-images.githubusercontent.com/84000919/124359579-959d0980-dc60-11eb-956e-42ad3206dcc2.JPG)
 
 - Log 확인
+
 ![rent_book_kill_fallback_2](https://user-images.githubusercontent.com/84000919/124359595-a0579e80-dc60-11eb-8709-7154327cba57.JPG)
 
 
