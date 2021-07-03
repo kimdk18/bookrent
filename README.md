@@ -846,14 +846,14 @@ kubectl get pod
 
 - deployment.yml에 readinessProbe 설정 후 미설정 상태 테스트를 위해 주석처리함 
 ```
-readinessProbe:
-httpGet:
-  path: '/biddingManagements'
-  port: 8080
-initialDelaySeconds: 10
-timeoutSeconds: 2
-periodSeconds: 5
-failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: '/rents'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
 ```
 
 - deployment.yml에서 readinessProbe 미설정 상태로 siege 부하발생
