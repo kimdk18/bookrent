@@ -96,8 +96,6 @@ final assessment
 
 
 
-
-
 ### 이벤트 도출
 
 ```
@@ -110,15 +108,12 @@ final assessment
 
 
 
-
-
 ### 부적격 이벤트 탈락
 
 ```
 - 과정중 도출된 잘못된 도메인 이벤트 또는 구현 제외 이벤트들을 걸러내는 작업을 수행
 - 결제, 연체관리, 반납관리, 알림 기능 제외
 ```
-
 
 
 
@@ -211,22 +206,19 @@ final assessment
 
 # 구현:
 
-(서비스 별 포트) 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트 등으로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 8085, 8088 이다)
+(서비스 별 포트) 분석/설계 단계에서 도출된 헥사고날 아키텍처에 따라, 각 BC별로 대변되는 마이크로 서비스들을 스프링부트 등으로 구현하였다. 구현한 각 서비스를 로컬에서 실행하는 방법은 아래와 같다 (각자의 포트넘버는 8081 ~ 8084, 8088 이다)
 
 ```
-cd BiddingManagement
+cd book
 mvn spring-boot:run
 
-cd BiddingParticipation
+cd rent
 mvn spring-boot:run 
 
-cd BiddingExamination
+cd delivery
 mvn spring-boot:run  
 
-cd Notification
-mvn spring-boot:run
-
-cd MyPage
+cd view
 mvn spring-boot:run
 
 cd gateway
@@ -235,53 +227,60 @@ mvn spring-boot:run
 
 ## DDD 의 적용
 
-- (Entity 예시) 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (아래 예시는 입찰관리 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다.
+- (Entity 예시) 각 서비스내에 도출된 핵심 Aggregate Root 객체를 Entity 로 선언하였다: (아래 예시는 대여관리 마이크로 서비스). 이때 가능한 현업에서 사용하는 언어 (유비쿼터스 랭귀지)를 그대로 사용하려고 노력했다.
 
 ```
-package bidding;
+package bookrent;
 
 import javax.persistence.*;
 import org.springframework.beans.BeanUtils;
-import java.util.Date;
 
 @Entity
-@Table(name="BiddingManagement_table")
-public class BiddingManagement {
+@Table(name="Rent_table")
+public class Rent {
 
     @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private Long id;
-    private String noticeNo;
-    private String title;
-    private Date dueDate;
-    private Integer price;
-    private String demandOrgNm;
-    private String bizInfo;
-    private String qualifications;
-    private String succBidderNm;
-    private String phoneNumber;
+    private Long bookId;
+    private Long userId;
+    private String address;
+    private String status;
 
     @PostPersist
     public void onPostPersist(){
-        NoticeRegistered noticeRegistered = new NoticeRegistered();
-        BeanUtils.copyProperties(this, noticeRegistered);
-        noticeRegistered.publishAfterCommit();
+        if ("Rent".equals(getStatus())) {
+            BookRented bookRented = new BookRented();
+            BeanUtils.copyProperties(this, bookRented);
+            bookRented.publishAfterCommit();
+        }
     }
-
     @PostUpdate
     public void onPostUpdate(){
-        SuccessBidderRegistered successBidderRegistered = new SuccessBidderRegistered();
-        BeanUtils.copyProperties(this, successBidderRegistered);
-        successBidderRegistered.publishAfterCommit();
+        if ("Cancel".equals(getStatus()))
+        {
+            BookCancelled bookCancelled = new BookCancelled();
+            BeanUtils.copyProperties(this, bookCancelled);
+            bookCancelled.publishAfterCommit();
+        }
     }
+    @PrePersist
+    public void onPrePersist(){
+        boolean status = RentApplication.applicationContext.getBean(bookrent.external.BookService.class)
+            .checkAndChangeStatus(getBookId());
 
-    @PostRemove
-    public void onPostRemove(){
-        NoticeCanceled noticeCanceled = new NoticeCanceled();
-        BeanUtils.copyProperties(this, noticeCanceled);
-        noticeCanceled.publishAfterCommit();
+        if (status)
+        {
+            setStatus("Rent");
+        }
+        else
+        {
+            setStatus("Fail");
+        }
     }
-
+    @PreUpdate
+    public void onPreUpdate(){
+    }
 
     public Long getId() {
         return id;
@@ -290,165 +289,150 @@ public class BiddingManagement {
     public void setId(Long id) {
         this.id = id;
     }
-    public String getNoticeNo() {
-        return noticeNo;
+    public Long getBookId() {
+        return bookId;
     }
 
-    public void setNoticeNo(String noticeNo) {
-        this.noticeNo = noticeNo;
+    public void setBookId(Long bookId) {
+        this.bookId = bookId;
     }
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-    public Date getDueDate() {
-        return dueDate;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setDueDate(Date dueDate) {
-        this.dueDate = dueDate;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
-    public Integer getPrice() {
-        return price;
-    }
-
-    public void setPrice(Integer price) {
-        this.price = price;
-    }
-    public String getDemandOrgNm() {
-        return demandOrgNm;
+    public String getAddress() {
+        return address;
     }
 
-    public void setDemandOrgNm(String demandOrgNm) {
-        this.demandOrgNm = demandOrgNm;
+    public void setAddress(String address) {
+        this.address = address;
     }
-    public String getBizInfo() {
-        return bizInfo;
-    }
-
-    public void setBizInfo(String bizInfo) {
-        this.bizInfo = bizInfo;
-    }
-    public String getQualifications() {
-        return qualifications;
+    public String getStatus() {
+        return status;
     }
 
-    public void setQualifications(String qualifications) {
-        this.qualifications = qualifications;
+    public void setStatus(String status) {
+        this.status = status;
     }
-    public String getSuccBidderNm() {
-        return succBidderNm;
-    }
-
-    public void setSuccBidderNm(String succBidderNm) {
-        this.succBidderNm = succBidderNm;
-    }
-    
-    public String getPhoneNumber() {
-        return phoneNumber;
-    }
-
-    public void setPhoneNumber(String phoneNumber) {
-        this.phoneNumber = phoneNumber;
-    }
-
 }
 ```
-- (Repository 예시) Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다
+- (Repository 예시) Entity Pattern 과 Repository Pattern 을 적용하여 JPA 를 통하여 다양한 데이터소스 유형 (RDB or NoSQL) 에 대한 별도의 처리가 없도록 데이터 접근 어댑터를 자동 생성하기 위하여 Spring Data REST 의 RestRepository 를 적용하였다. (아래 예시는 배송관리 마이크로서비스)
 ```
-package bidding;
+package bookrent;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
-@RepositoryRestResource(collectionResourceRel="biddingManagements", path="biddingManagements")
-public interface BiddingManagementRepository extends PagingAndSortingRepository<BiddingManagement, Long>{
+@RepositoryRestResource(collectionResourceRel="deliveries", path="deliveries")
+public interface DeliveryRepository extends PagingAndSortingRepository<Delivery, Long>{
 
-    BiddingManagement findByNoticeNo(String noticeNo);
+    Delivery findByRentId(Long id);
+    
 }
 ```
 
 - 적용 후 REST API 의 테스트
+### 1. 도서관리 등록
+ - http POST localhost:8081/books title=title01 status=true
+![book_post](https://user-images.githubusercontent.com/84000919/124358807-ec084900-dc5c-11eb-89b1-bf8e0be02f8a.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253612-47b99f00-cf07-11eb-85c1-bc9736d97ec9.png)
+### 2. 대여관리 등록
+ - http POST localhost:8082/rents bookId=1 userId=1 address=address1
+![rent_post](https://user-images.githubusercontent.com/84000919/124358857-2bcf3080-dc5d-11eb-9e81-97826eb1b9c5.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253640-5011da00-cf07-11eb-8b8d-b954879ab902.png)
+### 2-1. 대여관리 등록 -> 대여상태 확인 및 변경(Sync)
+ - status = false로 변경 확인
+![rent_post_book](https://user-images.githubusercontent.com/84000919/124358909-6df87200-dc5d-11eb-9b36-d1a9d25b1fb4.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253676-586a1500-cf07-11eb-8d1a-7b7b966a27bf.png)
+### 2-2. 대여관리 등록 -> 대여상태 확인 및 변경(Sync) 등록 실패 확인
+ - book MSA kill 후 대여관리 오류 확인
+![rent_book_kill_error](https://user-images.githubusercontent.com/84000919/124359037-27574780-dc5e-11eb-8b67-ad3176db9808.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253698-5ef88c80-cf07-11eb-8b40-5ae0ccbbd91e.png)
+### 2-3. 대여관리 등록 -> 배송관리 등록(Async)
+ - 배송관리 자동 등록 확인
+![rent_post_delivery](https://user-images.githubusercontent.com/84000919/124358920-810b4200-dc5d-11eb-8d5e-9812d7bafe9a.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122327901-9f88f200-cf69-11eb-8aa7-3edffac01e7a.png)
+### 2-4. 조회 확인 (CQRS)
+![view_1](https://user-images.githubusercontent.com/84000919/124358964-b31ca400-dc5d-11eb-9c8c-8fea95f60a37.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253729-66b83100-cf07-11eb-8d38-bfb30aabfa7e.png)
+### 3. 대여관리 취소
+ - http PATCH localhost:8082/rents/1 status=Cancel
+![cancel_patch](https://user-images.githubusercontent.com/84000919/124358975-c92a6480-dc5d-11eb-99a5-adb441f448af.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253779-720b5c80-cf07-11eb-88c7-8e6c687c63a3.png)
+### 3-1. 대여관리 취소 -> 배송관리 취소 -> 도서 상태 변경 (Async)
+![cancel_patch_delivery](https://user-images.githubusercontent.com/84000919/124358986-dc3d3480-dc5d-11eb-91aa-e75bebdb6ff5.JPG)
+![cancel_patch_book](https://user-images.githubusercontent.com/84000919/124358988-de9f8e80-dc5d-11eb-979e-7bd3ac41207b.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122253810-79cb0100-cf07-11eb-8557-fad7d460bd75.png)
+### 3-2. 조회 확인 (CQRS)
+![view_2](https://user-images.githubusercontent.com/84000919/124358999-ef500480-dc5d-11eb-8fde-1517de13f581.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122331399-b5011a80-cf6f-11eb-8cdc-27bd84ef5cfd.png)
+### 4. Gateway 확인
+ - http GET localhost:8088/views/1
+![gateway_1](https://user-images.githubusercontent.com/84000919/124359086-5372c880-dc5e-11eb-99d5-162280206a49.JPG)
 
-![image](https://user-images.githubusercontent.com/84000959/122337586-7f612f00-cf79-11eb-94cd-d5af9ff136de.png)
 
 
 ## 폴리글랏 퍼시스턴스
 
-(H2DB, HSQLDB 사용) Notification(문자알림) 서비스는 문자알림 이력이 많이 쌓일 수 있으므로 자바로 작성된 관계형 데이터베이스인 HSQLDB를 사용하기로 하였다. 이를 위해 pom.xml 파일에 아래 설정을 추가하였다.
+(H2DB, HSQLDB 사용) view 마이크로서비스는 이력이 많이 쌓일 수 있으므로 자바로 작성된 관계형 데이터베이스인 HSQLDB를 사용하기로 하였다. 이를 위해 pom.xml 파일에 아래 설정을 추가하였다.
 
 ```
-# pom.xml
-<dependency>
-	<groupId>org.hsqldb</groupId>
-    	<artifactId>hsqldb</artifactId>
-	<scope>runtime</scope>
-</dependency>
+		<dependency>
+			<groupId>org.hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 ```
-![image](https://user-images.githubusercontent.com/84000959/122328060-e7a81480-cf69-11eb-9955-954f88b7ec1b.png)
 
-- 입찰관리, 입찰참여, 입찰심사 등 나머지 서비스는 H2 DB를 사용한다.
+- 도서관리, 대여관리, 배송관리 등 나머지 서비스는 H2 DB를 사용한다.
 ```
-<dependency>
-	<groupId>com.h2database</groupId>
-	<artifactId>h2</artifactId>
-	<scope>runtime</scope>
-</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 ```
 
 ## 동기식 호출 과 Fallback 처리
 
-분석단계에서의 조건 중 하나로 심사결과등록(입찰심사)->낙찰자정보등록(입찰관리) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
+분석단계에서의 조건 중 하나로 책대여(대여관리)->도서상태확인및변경(도서관리) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
 - (동기호출-Req)낙찰자정보 등록 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 ```
-# (BiddingExamination) BiddingManagementService.java
-package bidding.external;
+# (rent) BookService.java
 
-@FeignClient(name="BiddingManagement", url="http://${api.url.bidding}:8080", fallback=BiddingManagementServiceFallback.class)
-public interface BiddingManagementService {
+package bookrent.external;
 
-    @RequestMapping(method= RequestMethod.GET, path="/biddingManagements/registSucessBidder")
-    public boolean registSucessBidder(@RequestParam("noticeNo") String noticeNo,
-    @RequestParam("succBidderNm") String succBidderNm, @RequestParam("phoneNumber") String phoneNumber);
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@FeignClient(name="book", url="http://localhost:8081", fallback=BookServiceFallback.class)
+public interface BookService {
+    @RequestMapping(method= RequestMethod.GET, path="/books/checkAndChangeStatus")
+    public boolean checkAndChangeStatus(@RequestParam("bookId") Long bookId);
 
 }
 ```
 
-- (Fallback) 낙찰자정보 등록 서비스가 정상적으로 호출되지 않을 경우 Fallback 처리
+- (Fallback) 도서관리 서비스가 정상적으로 호출되지 않을 경우 Fallback 처리
 ```
-# (BiddingExamination) BiddingManagementServiceFallback.java
-package bidding.external;
+# (rent) BookServiceFallback.java
+
+package bookrent.external;
 
 import org.springframework.stereotype.Component;
 
 @Component
-public class BiddingManagementServiceFallback implements BiddingManagementService{
+public class BookServiceFallback implements BookService {
 
     @Override
-    public boolean registSucessBidder(String noticeNo,String succBidderNm, String phoneNumber){
-        System.out.println("★★★★★★★★★★★Circuit breaker has been opened. Fallback returned instead.★★★★★★★★★★★");
+    public boolean checkAndChangeStatus(Long bookId) {
+        System.out.println("###### Fallback ######");
         return false;
     }
 }
@@ -460,170 +444,172 @@ feign:
     enabled: true
 ```
 
-- (동기호출-Res) 낙찰자자정보 등록 서비스 (정상 호출)
+- (동기호출-Res) 도서관리 서비스 (정상 호출)
 ```
-# (BiddingManagement) BiddingManagementController.java
-package bidding;
+# (book) BookController.java
 
- @RestController
- public class BiddingManagementController {
+package bookrent;
 
-    @Autowired
-    BiddingManagementRepository biddingManagementRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-    @RequestMapping(value = "/biddingManagements/registSucessBidder",
-       method = RequestMethod.GET,
-       produces = "application/json;charset=UTF-8")
-    public boolean registSucessBidder(HttpServletRequest request, HttpServletResponse response) {
-       boolean status = false;
+@RestController
+public class BookController {
+        @Autowired
+        BookRepository bookRepository;
 
-       String noticeNo = String.valueOf(request.getParameter("noticeNo"));
-       
-       BiddingManagement biddingManagement = biddingManagementRepository.findByNoticeNo(noticeNo);
+        @RequestMapping(value = "/books/checkAndChangeStatus",
+        method = RequestMethod.GET,
+        produces = "application/json;charset=UTF-8")
+        public boolean checkAndChangeStatus(HttpServletRequest request, HttpServletResponse response) {
+                boolean rtnVal = false;
+                System.out.println("##### /book/checkAndChangeStatus  called #####");
 
-       if(biddingManagement.getDemandOrgNm() == null || "조달청".equals(biddingManagement.getDemandOrgNm()) == false){
-            biddingManagement.setSuccBidderNm(request.getParameter("succBidderNm"));
-            biddingManagement.setPhoneNumber(request.getParameter("phoneNumber"));
+                Long bookId = Long.parseLong(request.getParameter("bookId"));
 
-            biddingManagementRepository.save(biddingManagement);
+                System.out.println("###### Book ID : " + bookId + " ######");
 
-            status = true;
-       }
+                Optional<Book> optional = bookRepository.findById(bookId);
 
-       return status;
-    }
-
- }
-```
-
-- (동기호출-PostUpdate) 심사결과가 등록된 직후(@PostUpdate) 낙찰자정보 등록을 요청하도록 처리 (낙찰자가 아닌 경우, 이후 로직 스킵)
-```
-# BiddingExamination.java (Entity)
-
-    @PostUpdate
-    public void onPostUpdate(){
-        // 낙찰업체가 아니면 Skip.
-        if(getSuccessBidderFlag() == false) return;
-
-        try{
-            // mappings goes here
-            boolean isUpdated = BiddingExaminationApplication.applicationContext.getBean(bidding.external.BiddingManagementService.class)
-            .registSucessBidder(getNoticeNo(), getCompanyNm(), getPhoneNumber());
-
-            if(isUpdated == false){
-                throw new Exception("입찰관리 서비스의 입찰공고에 낙찰자 정보가 갱신되지 않음");
-            }
-        }catch(java.net.ConnectException ce){
-            throw new Exception("입찰관리 서비스 연결 실패");
-        }catch(Exception e){
-            throw new Exception("입찰관리 서비스 처리 실패");
+                if (optional.isPresent())
+                {
+                        Book book = optional.get();
+                        if (book.getStatus())
+                        {
+                                rtnVal = true;
+                                book.setStatus(false);
+                                bookRepository.save(book);
+                        }
+                }
+                return rtnVal;
         }
-```
-
-- (동기호출-테스트) 동기식 호출에서는 호출 시간에 따른 타임 커플링이 발생하며, 입찰관리 시스템이 장애가 나면 입찰심사 등록도 못 한다는 것을 확인:
+}
 
 ```
-# 입찰관리(BiddingManagement) 서비스를 잠시 내려놓음 (ctrl+c)
 
-#심사결과 등록 : Fail
-http PATCH http://localhost:8083/biddingExaminations/1 noticeNo=n01 participateNo=p01 successBidderFlag=true
+- (동기호출-PrePersist) 대여정보 입력 전 도서상태 확인 및 변경 호출
+```
+# Rent.java (Entity)
 
-#입찰관리 서비스 재기동
-cd BiddingManagement
-mvn spring-boot:run
+    @PrePersist
+    public void onPrePersist(){
+        boolean status = RentApplication.applicationContext.getBean(bookrent.external.BookService.class)
+            .checkAndChangeStatus(getBookId());
 
-#심사결과 등록 : Success
-http PATCH http://localhost:8083/biddingExaminations/1 noticeNo=n01 participateNo=p01 successBidderFlag=true
+        if (status)
+        {
+            setStatus("Rent");
+        }
+        else
+        {
+            setStatus("Fail");
+        }
+    }
 ```
 
-- 또한 과도한 요청시에 서비스 장애가 도미노 처럼 벌어질 수 있다. (서킷브레이커, 폴백 처리는 운영단계에서 설명한다.)
+- (Fallback-테스트) 도서관리 서비스 종료 후 Fallback 처리 확인
 
+```
+# 도서관리(book) 서비스를 잠시 내려놓음 (ctrl+c)
+
+# 대여관리 등록
+http POST localhost:8082/rents bookId=1 userId=1 address=address1http POST localhost:8082/rents bookId=1 userId=1 address=address1
+```
+- BookServiceFallback 호출되어 대여상태(status)가 Fail로 등록
+![rent_book_kill_fallback_1](https://user-images.githubusercontent.com/84000919/124359579-959d0980-dc60-11eb-956e-42ad3206dcc2.JPG)
+
+- Log 확인
+![rent_book_kill_fallback_2](https://user-images.githubusercontent.com/84000919/124359595-a0579e80-dc60-11eb-8709-7154327cba57.JPG)
 
 
 
 ## 비동기식 호출 / 시간적 디커플링 / 장애격리 / 최종 (Eventual) 일관성 테스트
 
-
-입찰공고가 등록된 후에 입찰참여 시스템에 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 입찰참여 시스템의 처리를 위하여 입찰공고 트랜잭션이 블로킹 되지 않도록 처리한다.
+대여정보가 등록된 후에 배송관리 시스템에 알려주는 행위는 동기식이 아니라 비 동기식으로 처리하여 배송관리 시스템의 처리를 위하여 대여등록 트랜잭션이 블로킹 되지 않도록 처리한다.
  
-- (Publish) 이를 위하여 입찰공고 기록을 남긴 후에 곧바로 등록 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
+- (Publish) 이를 위하여 대여정보를 남긴 후에 곧바로 등록 되었다는 도메인 이벤트를 카프카로 송출한다(Publish)
  
 ```
-@Entity
-@Table(name="BiddingManagement_table")
-public class BiddingManagement {
-
- ...
     @PostPersist
     public void onPostPersist(){
-        NoticeRegistered noticeRegistered = new NoticeRegistered();
-        BeanUtils.copyProperties(this, noticeRegistered);
-        noticeRegistered.publishAfterCommit();
-    }
-```
-- (Subscribe-등록) 입찰참여 서비스에서는 입찰공고 등록됨 이벤트를 수신하면 입찰공고 번호를 등록하는 정책을 처리하도록 PolicyHandler를 구현한다:
-
-```
-@Service
-public class PolicyHandler{
-
-    @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverNoticeRegistered_RecieveBiddingNotice(@Payload NoticeRegistered noticeRegistered){
-
-        if(!noticeRegistered.validate()) return;
-
-        if(noticeRegistered.isMe()){
-            BiddingParticipation biddingParticipation = new BiddingParticipation();
-            biddingParticipation.setNoticeNo(noticeRegistered.getNoticeNo());
-
-            biddingParticipationRepository.save(biddingParticipation);
+        if ("Rent".equals(getStatus())) {
+            BookRented bookRented = new BookRented();
+            BeanUtils.copyProperties(this, bookRented);
+            bookRented.publishAfterCommit();
         }
     }
+```
+- (Subscribe-등록) 배송관리 서비스에서는 대여됨 이벤트를 수신하면 배송정보를 등록하는 정책을 처리하도록 PolicyHandler를 구현한다:
 
 ```
-- (Subscribe-취소) 입찰참여 서비스에서는 입찰공고가 취소됨 이벤트를 수신하면 입찰참여 정보를 삭제하는 정책을 처리하도록 PolicyHandler를 구현한다:
+    @StreamListener(KafkaProcessor.INPUT)
+    public void wheneverBookRented_DeliveryStart(@Payload BookRented bookRented){
+
+        if(!bookRented.validate()) return;
+
+        Delivery delivery = new Delivery();
+        delivery.setBookId(bookRented.getBookId());
+        delivery.setRentId(bookRented.getId());
+        delivery.setUserId(bookRented.getUserId());
+        delivery.setAddress(bookRented.getAddress());
+        delivery.setStatus("Delivery Started");
+
+        deliveryRepository.save(delivery);
+    }
+
+```
+- (Subscribe-취소) 배송관리 서비스에서는 대여취소됨 이벤트를 수신하면 배송정보를 변경하는 정책을 처리하도록 PolicyHandler를 구현한다:
   
 ```
-@Service
-public class PolicyHandler{
-    @Autowired BiddingParticipationRepository biddingParticipationRepository;
-
     @StreamListener(KafkaProcessor.INPUT)
-    public void wheneverNoticeCanceled_CancelBiddingParticipation(@Payload NoticeCanceled noticeCanceled){
+    public void wheneverBookCancelled_DeliveryCancel(@Payload BookCancelled bookCancelled){
 
-        if(!noticeCanceled.validate()) return;
+        if(!bookCancelled.validate()) return;
+        // Get Methods
 
-        if(noticeCanceled.isMe()){
-            BiddingParticipation biddingParticipation = biddingParticipationRepository.findByNoticeNo(noticeCanceled.getNoticeNo());
-            biddingParticipationRepository.delete(biddingParticipation);
-        }
-            
+        // Sample Logic //
+        System.out.println("\n\n##### listener DeliveryCancel : " + bookCancelled.toJson() + "\n\n");
+
+        Delivery delivery = deliveryRepository.findByRentId(bookCancelled.getId());
+
+        delivery.setStatus("Delivery Cancelled");
+        deliveryRepository.save(delivery);
     }
-
 ```
 
-- (장애격리) 입찰관리, 입찰참여 시스템은 입찰심사 시스템과 완전히 분리되어 있으며, 이벤트 수신에 따라 처리되기 때문에, 입찰심사 시스템이 유지보수로 인해 잠시 내려간 상태라도 입찰관리, 입찰참여 서비스에 영향이 없다:
+- (장애격리) 배송관리 시스템은 대여관리 시스템과 완전히 분리되어 있으며, 이벤트 수신에 따라 처리되기 때문에, 배송관리 시스템이 유지보수로 인해 잠시 내려간 상태라도 대여관리 서비스에 영향이 없다:
 ```
-# 입찰심사 서비스 (BiddingExamination) 를 잠시 내려놓음 (ctrl+c)
+# 배송관리 서비스 (delivery) 를 잠시 내려놓음 (ctrl+c)
 
-#입찰공고 등록 : Success
-http POST localhost:8081/biddingManagements noticeNo=n33 title=title33
-#입찰참여 등록 : Success
-http PATCH http://localhost:8082/biddingParticipations/2 noticeNo=n33 participateNo=p33 companyNo=c33 companyNm=doremi33 phoneNumber=010-1234-1234
+# 대여관리 등록 : Success
+http POST localhost:8082/rents bookId=1 userId=1 address=address1
 
-#입찰관리에서 낙찰업체명 갱신 여부 확인
-http localhost:8081/biddingManagements/2     # 낙찰업체명 갱신 안 됨 확인
+# 조회확인
+http GET localhost:8084/views/1
 
-#입찰심사 서비스 기동
-cd BiddingExamination
+# 배송관리 서비스 기동
+cd delivery
 mvn spring-boot:run
 
-#심사결과 등록 : Success
-http PATCH http://localhost:8083/biddingExaminations/2 noticeNo=n33 participateNo=p33 successBidderFlag=true
-
-#입찰관리에서 낙찰업체명 갱신 여부 확인
-http localhost:8081/biddingManagements/2     # 낙찰업체명 갱신됨 확인
+# 조회기능에서 배송정보 갱신 확인
+http GET localhost:8084/views/1
 ```
+- delivery 종료 후 대여등록 시 대여등록 정상 및 view 확인 (배송상태 미적용 확인)
+![pubsub_rent_post](https://user-images.githubusercontent.com/84000919/124359950-0f81c280-dc62-11eb-9a4b-89b1fc37233d.JPG)
+
+![pubsub_rent_post_view](https://user-images.githubusercontent.com/84000919/124359951-11e41c80-dc62-11eb-8459-1dc641f4f3f7.JPG)
+
+
+- delivery 재시작 후 view 확인 (배송상태 정상 변경 확인)
+![pubsub_rent_post_view_2](https://user-images.githubusercontent.com/84000919/124359955-16103a00-dc62-11eb-82d0-58046bc5dbb9.JPG)
+
+
+
 
 # 운영:
 
