@@ -608,12 +608,14 @@ mvn spring-boot:run
 http GET localhost:8084/views/1
 ```
 - delivery 종료 후 대여등록 시 대여등록 정상 및 view 확인 (배송상태 미적용 확인)
+
 ![pubsub_rent_post](https://user-images.githubusercontent.com/84000919/124359950-0f81c280-dc62-11eb-9a4b-89b1fc37233d.JPG)
 
 ![pubsub_rent_post_view](https://user-images.githubusercontent.com/84000919/124359951-11e41c80-dc62-11eb-8459-1dc641f4f3f7.JPG)
 
 
 - delivery 재시작 후 view 확인 (배송상태 정상 변경 확인)
+
 ![pubsub_rent_post_view_2](https://user-images.githubusercontent.com/84000919/124359955-16103a00-dc62-11eb-82d0-58046bc5dbb9.JPG)
 
 
