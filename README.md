@@ -4,7 +4,7 @@ final assessment
 
 ### Repositories
 
-- https://github.com/21-2-1team/bidding03.git
+- https://github.com/kimdk18/bookrent.git
 
 
 
@@ -49,39 +49,34 @@ final assessment
 ### 기능적 요구 사항
 
 ```
-• 입찰담당부서는 입찰공고를 등록한다.
-• 입찰공고가 등록되면 입찰공고가 접수된다.
-• 조달업체는 입찰서를 등록한다.
-• 입찰서가 등록되면 입찰심사가 접수(등록)된다.
-• 심사부서는 심사결과를 등록한다.
-• 심사결과가 등록되면 입찰공고에 낙찰자 정보가 등록(공지)된다.
-• 입찰담당부서는 입찰공고를 취소 할 수 있다.
-• 입찰공고가 취소되면 입찰서 등록 및 심사결과도 취소된다.
-• 입찰서 등록, 입찰서 등록 취소, 낙찰자 등록 시 조달업체 담당자에게 SMS를 발송한다.
-• 조달업체는 입찰현황을 조회 할 수 있다.
-※ 위 시나리오는 가상의 절차로, 실제 업무와 다를 수 있습니다.
+1. 고객이 책을 대여 요청한다.
+2. 대여요청을 하면 대여가능 확인 후 대여를 확정한다.
+3. 대여가 확정되면 배송팀에 배송요청한다.
+4. 배송요청이 되면 배송이 시작된다.
+5. 고객이 대여 요청을 취소 할 수 있다.
+6. 대여 요청이 취소되면 배송이 취소된다.
+7. 고객은 대여 상태를 조회할 수 있다.
 ```
 
 ### 비기능적 요구 사항
 
 ```
 1. 트랜잭션
-  - 심사결과가 등록되면 입찰공고에 낙찰자 정보가 등록되어야 한다. (Sync 호출)
+  - 대여요청을 하면 대여 가능여부 확인 후 대여가 자동 확정된다 Sync 호출
 2. 장애격리
-  - 입찰심사 기능이 수행되지 않더라도 입찰관리, 입찰참여 기능은 365일 24시간 받을 수 있어야 한다. Async (event-driven), Eventual Consistency
-  - 입찰참여 기능이 과중되면 사용자를 잠시 동안 받지 않고 입찰참여를 잠시후에 하도록 유도한다. Circuit breaker, fallback
+  - 대여요청은 365일 24시간 받을 수 있어야 한다 Async (event-driven), Eventual Consistency
+  - 대여요청 시스템이 과중되면 사용자를 잠시동안 받지 않고 대여요청을 잠시후에 하도록 유도한다 Circuit breaker, fallback
 3. 성능
-  - 조달업체는 입찰현황조회 화면에서 입찰 상태를 확인 할 수 있어야 한다.CQRS - 조회전용 서비스
+  - 고객이 자주 대여요청 상태를 확인할 수 있어야 한다 CQRS
 ```
 
 ### Microservice명
 
 ```
-입찰관리 – BiddingManagement
-입찰참여 - BiddingParticipation
-입찰심사 - BiddingExamination
-문자알림이력 - Notification
-입찰현황조회 - MyPage
+도서관리 – book
+대여관리 - rent
+배송관리 - delivery
+현황조회 - view
 ```
 
 
@@ -96,7 +91,7 @@ final assessment
 
 ### TO-BE 조직 (Vertically-Aligned)
 
-![2  TO-BE 조직](https://user-images.githubusercontent.com/84000922/122162398-7c4d3c80-ceae-11eb-88b9-863f1e58ba41.png)
+![2  TO-BE 조직](https://user-images.githubusercontent.com/84000919/124354495-37aff800-dc47-11eb-9c8d-a02d2bdedbaf.png)
 
 
 
@@ -105,20 +100,23 @@ final assessment
 
 ### 이벤트 도출
 
-![3  이벤트 도출](https://user-images.githubusercontent.com/84000922/122162410-7fe0c380-ceae-11eb-9822-adb2c3b8d62a.png)
+```
+- 책 등록됨
+- 대여됨
+- 대여취소됨
+- 배송시작됨
+- 배송취소됨
+```
+
 
 
 
 
 ### 부적격 이벤트 탈락
 
-![4  부적격 이벤트 탈락](https://user-images.githubusercontent.com/84000922/122162412-7fe0c380-ceae-11eb-8aba-20f04b2a4dbb.png)
-
 ```
-- 과정중 도출된 잘못된 도메인 이벤트들을 걸러내는 작업을 수행
-- 이의제기등록됨 : 후행 시나리오라서 제외
-- 가격심사점수등록됨 : 속성 정보여서 제외
-- 입찰공고메뉴선택됨, 입찰현황조회됨 : UI 의 이벤트이지, 업무적인 의미의 이벤트가 아니라서 제외 
+- 과정중 도출된 잘못된 도메인 이벤트 또는 구현 제외 이벤트들을 걸러내는 작업을 수행
+- 결제, 연체관리, 반납관리, 알림 기능 제외
 ```
 
 
@@ -126,56 +124,47 @@ final assessment
 
 ### 액터, 커맨드 부착하여 읽기 좋게
 
-![5  액터, 커맨드 부착하여 읽기 좋게](https://user-images.githubusercontent.com/84000922/122162413-80795a00-ceae-11eb-9b06-668274f351f7.png)
-
+![5  액터, 커맨드 부착하여 읽기 좋게](https://user-images.githubusercontent.com/84000919/124354669-113e8c80-dc48-11eb-88d8-d8c49d449a38.JPG)
 
 
 
 ### 어그리게잇으로 묶기
 
-![6  어그리게잇으로 묶기](https://user-images.githubusercontent.com/84000922/122162415-80795a00-ceae-11eb-8b57-846e1779e420.png)
+![6  어그리게잇으로 묶기](https://user-images.githubusercontent.com/84000919/124354684-22879900-dc48-11eb-8c4b-2a01ed5e4636.JPG)
 
 ```
-- 입찰관리, 입찰참여, 입찰심사는 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들 끼리 묶어줌
+- 도서관리, 대여관리, 배송관리는 그와 연결된 command 와 event 들에 의하여 트랜잭션이 유지되어야 하는 단위로 그들 끼리 묶어줌
 ```
-
 
 
 
 ### 바운디드 컨텍스트로 묶기
 
-![7  바운디드 컨텍스트로 묶기](https://user-images.githubusercontent.com/84000922/122162416-8111f080-ceae-11eb-87be-10c03082eab2.png)
-
-```
-도메인 서열 분리
-- Core Domain: 입찰관리, 입찰참여: 없어서는 안될 핵심 서비스이며, 연간 Up-time SLA 수준을 99.999% 목표, 입찰관리배포주기는 1개월 1회 미만, 입찰참여 배포주기는 1주일 1회 미만
- - Supporting Domain: 입찰심사 : 경쟁력을 내기 위한 서비스이며, SLA 수준은 연간 60% 이상 uptime 목표, 배포주기는 각 팀의 자율이나 표준 스프린트 주기가 1주일 이므로 1주일 1회 이상을 기준으로 함. 
-- General Domain: Notification : 알림서비스로 3rd Party 외부 서비스를 사용하는 것이 경쟁력이 높음 (핑크색으로 이후 전환할 예정)
-```
-
+![7  바운디드 컨텍스트로 묶기](https://user-images.githubusercontent.com/84000919/124354698-3501d280-dc48-11eb-9986-0beebd408ae7.JPG)
 
 
 
 ### 폴리시 부착, 이동 및 컨텍스트 매핑(점선은 Pub/Sub, 실선은 Req/Resp)
 
-![image](https://user-images.githubusercontent.com/84000959/122225382-fc47c680-ceef-11eb-859f-70c06e195310.png)
+![image](https://user-images.githubusercontent.com/84000919/124354739-71cdc980-dc48-11eb-9690-e624b603f3c1.JPG)
 
 
 
 ### 완성된 1차 모형
 
-![image](https://user-images.githubusercontent.com/84000959/122225301-e76b3300-ceef-11eb-8263-847226aba7a6.png)
+![image](https://user-images.githubusercontent.com/84000919/124354745-785c4100-dc48-11eb-8748-027edbbeb20f.JPG)
 
 
 
 ### 1차 완성본에 대한 기능적 요구사항을 커버하는지 검증 (1/2)
 
-![10  1차 완성본에 대한 기능적](https://user-images.githubusercontent.com/84000922/122162421-82431d80-ceae-11eb-8a7d-18df4aff613a.png)
+![10  1차 완성본에 대한 기능적](https://user-images.githubusercontent.com/84000919/124355158-bce8dc00-dc4a-11eb-8111-b4cfe85dac99.JPG)
 
 ```
-1) 입찰담당부서는 입찰공고를 등록한다. 입찰공고가 등록되면 입찰공고가 접수된다.
-2) 조달업체는 입찰서를 등록한다. 입찰서가 등록되면 입찰심사가 접수(등록)된다.
-3) 심사부서는 심사결과를 등록한다. 심사결과가 등록되면 입찰공고에 낙찰자 정보가 등록(공지)된다.
+1. 고객이 책을 대여 요청한다. (ok)
+2. 대여요청을 하면 대여가능 확인 후 대여를 확정한다. (ok)
+3. 대여가 확정되면 배송팀에 배송요청한다. (ok)
+4. 배송요청이 되면 배송이 시작된다. (ok)
 ```
 
 
@@ -183,13 +172,12 @@ final assessment
 
 ### 1차 완성본에 대한 기능적 요구사항을 커버하는지 검증 (2/2)
 
-![11  1차 완성본에 대한 기능적 요구사항](https://user-images.githubusercontent.com/84000922/122162422-82431d80-ceae-11eb-9645-c57cd204c18e.png)
+![11  1차 완성본에 대한 기능적 요구사항](https://user-images.githubusercontent.com/84000919/124355164-c5411700-dc4a-11eb-9344-278db63af705.JPG)
 
 ```
-1) 입찰담당부서는 입찰공고를 취소 할 수 있다. 
-   입찰공고가 취소되면 입찰서 등록 및 심사결과도 취소된다.
-2) 입찰서 등록, 입찰서 등록 취소, 낙찰자 등록 시 조달업체 담당자에게 SMS를 발송한다.
-3) 조달업체는 입찰현황을 조회 할 수 있다.
+5. 고객이 대여 요청을 취소 할 수 있다. (ok)
+6. 대여 요청이 취소되면 배송이 취소된다. (ok)
+7. 고객은 대여 상태를 조회할 수 있다. (ok)
 ```
 
 
@@ -197,18 +185,18 @@ final assessment
 
 ### 1차 완성본에 대한 비기능적 요구사항을 커버하는지 검증
 
-![12  1차 완성본에 대한 비기능적](https://user-images.githubusercontent.com/84000922/122162424-82dbb400-ceae-11eb-92d5-9f938ac7d6cf.png)
+![12  1차 완성본에 대한 비기능적](https://user-images.githubusercontent.com/84000919/124355168-cc682500-dc4a-11eb-818d-e7aec8de6756.JPG)
 
 ```
 1. 트랜잭션
-  - 심사결과가 등록되면 입찰공고에 낙찰자 정보가 등록되어야 한다. (Sync 호출)
+ - 대여요청을 하면 대여 가능여부 확인 후 대여가 자동 확정된다 Sync 호출
+ 
 2. 장애격리
-  - 입찰심사 기능이 수행되지 않더라도 입찰관리, 입찰참여 기능은 365일 24시간 받을 수 있어야 한다. 
-    Async (event-driven), Eventual Consistency
-  - 입찰참여 기능이 과중되면 사용자를 잠시 동안 받지 않고 입찰참여를 잠시후에 하도록 유도한다.
-    Circuit breaker, fallback
+ - 대여요청은 365일 24시간 받을 수 있어야 한다 Async (event-driven), Eventual Consistency
+ - 대여요청 시스템이 과중되면 사용자를 잠시동안 받지 않고 대여요청을 잠시후에 하도록 유도한다 Circuit breaker, fallback
+ 
 3. 성능
-  - 조달업체는 입찰현황조회 화면에서 입찰 상태를 확인 할 수 있어야 한다.CQRS - 조회전용 서비스
+ - 고객이 자주 대여요청 상태를 확인할 수 있어야 한다 CQRS
 ```
 
 
@@ -219,11 +207,6 @@ final assessment
 ![13  헥사고날 아키텍처 다이어그램 도출](https://user-images.githubusercontent.com/84000922/122162425-82dbb400-ceae-11eb-9e47-eef31b055935.png)
 
 
-
-
-### Git Organization / Repositories
-
-![image](https://user-images.githubusercontent.com/84000959/122514263-a2a5e000-d046-11eb-8ee9-1e2b53211df7.png)
 
 
 # 구현:
