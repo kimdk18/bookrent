@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: view
+  namespace: bookrent
   labels:
     app: view
 spec:
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
         - name: view
-          image: username/view:latest
+          image: bookrentskccacr.azurecr.io/view:v1.0
           ports:
             - containerPort: 8080
           readinessProbe:

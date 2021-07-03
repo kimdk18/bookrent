@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rent
+  namespace: bookrent
   labels:
     app: rent
 spec:
@@ -16,7 +17,7 @@ spec:
     spec:
       containers:
         - name: rent
-          image: username/rent:latest
+          image: bookrentskccacr.azurecr.io/rent:v1.0
           ports:
             - containerPort: 8080
           readinessProbe:
