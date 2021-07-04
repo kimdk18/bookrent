@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: book
-          image: bookrentskccacr.azurecr.io/book:v1.0
+          image: bookrentskccacr.azurecr.io/book:v1.4
           ports:
             - containerPort: 8080
           #readinessProbe:

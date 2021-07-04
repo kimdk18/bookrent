@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: rent
-          image: bookrentskccacr.azurecr.io/rent:v1.1
+          image: bookrentskccacr.azurecr.io/rent:v1.2
           ports:
             - containerPort: 8080
           env:
@@ -31,14 +31,14 @@ spec:
               cpu: 500m
             requests:
               cpu: 250m
-          #readinessProbe:
-          #  httpGet:
-          #    path: '/rents'
-          #    port: 8080
-          #  initialDelaySeconds: 10
-          #  timeoutSeconds: 2
-          #  periodSeconds: 5
-          #  failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: '/rents'
+              port: 8080
+            initialDelaySeconds: 10
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 10
           livenessProbe:
             httpGet:
               path: '/rents'

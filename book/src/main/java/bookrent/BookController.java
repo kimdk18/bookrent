@@ -26,13 +26,14 @@ public class BookController {
 
                 System.out.println("###### Book ID : " + bookId + " ######");
 
-                /* Circuit Breaker 
-                try {
-                        Thread.sleep((long) (800 + Math.random() * 300));
+                long sleepTime = (long) (800 + Math.random() * 300);
+                try {        
+                        Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
                         e.printStackTrace();
                 }
-                */
+
+                System.out.println("##### Sleep Time : " + sleepTime + " #####");
 
                 Optional<Book> optional = bookRepository.findById(bookId);
 
