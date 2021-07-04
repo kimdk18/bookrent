@@ -950,4 +950,4 @@ kubectl exec -it pod/siege  -c siege -n bookrent -- /bin/bash
 siege -c2 -t10S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
 ```
 
-![cb_result](https://user-images.githubusercontent.com/84000919/124369703-c3f30700-dca9-11eb-8ee0-f8a7dc3c5cea.jpg)
+![cb_result_2](https://user-images.githubusercontent.com/84000919/124369732-09afcf80-dcaa-11eb-8262-87f38724974e.jpg)
