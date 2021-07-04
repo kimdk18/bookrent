@@ -947,8 +947,7 @@ req/res를 처리하는 피호출 function에 sleep 추가
 - req/res 호출하는 rent에 부하를 발생하여 1000ms 이상 시간이 걸릴경우 CB 정상 동작 확인
 ```
 kubectl exec -it pod/siege  -c siege -n bookrent -- /bin/bash
-siege -c2 -t20S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
+siege -c2 -t10S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
 ```
-![image](https://user-images.githubusercontent.com/70736001/122508763-7b96e080-d03d-11eb-90f8-8380277cdc17.png)
 
-
+![cb_result](https://user-images.githubusercontent.com/84000919/124369703-c3f30700-dca9-11eb-8ee0-f8a7dc3c5cea.jpg)
