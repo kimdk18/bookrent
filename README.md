@@ -829,7 +829,7 @@ kubectl get cm book-cm -o yaml
 ![cm_1](https://user-images.githubusercontent.com/84000919/124366475-1c66dc00-dc8b-11eb-9a30-30a3909e9eb4.jpg)
 
 ```
-kubectl get pod
+kubectl get all
 ```
 
 - rent 재시작 후 cm 생성 전 pod 생성 오류
@@ -858,85 +858,63 @@ kubectl get pod
 
 - deployment.yml에서 readinessProbe 미설정 상태로 siege 부하발생
 
-![image](https://user-images.githubusercontent.com/70736001/122505873-2906f580-d038-11eb-86b8-2f8388f82dd1.png)
+![readiness_before_code](https://user-images.githubusercontent.com/84000919/124367896-699c7b00-dc96-11eb-8fdf-9ebc5b3c02c0.jpg)
 
 ```
-kubectl exec -it pod/siege  -c siege -n bidding -- /bin/bash
-siege -c100 -t5S -v --content-type "application/json" 'http://20.194.120.4:8080/biddingManagements POST {"noticeNo":1,"title":"AAA"}
+kubectl exec -it pod/siege  -c siege -n bookrent -- /bin/bash
+siege -c50 -t30S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
 ```
 1.부하테스트 전
 
-![image](https://user-images.githubusercontent.com/70736001/122506020-75eacc00-d038-11eb-99df-4a4b90478bc3.png)
+![readiness_before_pod](https://user-images.githubusercontent.com/84000919/124367899-7325e300-dc96-11eb-851f-e6b295ac5e87.jpg)
 
 2.부하테스트 후
 
-![image](https://user-images.githubusercontent.com/70736001/122506060-84d17e80-d038-11eb-8449-b94b28a0f385.png)
+![readiness_after_pod](https://user-images.githubusercontent.com/84000919/124367901-7a4cf100-dc96-11eb-9dd9-4b0397d9c61e.jpg)
 
 3.생성중인 Pod 에 대한 요청이 들어가 오류발생
 
-![image](https://user-images.githubusercontent.com/70736001/122506129-a03c8980-d038-11eb-8822-5ec57926b900.png)
+![readiness_siege](https://user-images.githubusercontent.com/84000919/124367910-994b8300-dc96-11eb-842a-418a83c1dac4.jpg)
 
-- 정상 실행중인 biddingmanagement으로의 요청은 성공(201),비정상 적인 요청은 실패(503 - Service Unavailable) 확인
+- 정상 실행중인 rent 요청은 성공, 비정상 적인 요청은 실패 확인
 
-- hpa 설정에 의해 target 지수 초과하여 biddingmanagement scale-out 진행됨
+- hpa 설정에 의해 target 지수 초과하여 rent scale-out 진행됨
 
 - deployment.yml에 readinessProbe 설정 후 부하발생 및 Availability 100% 확인
 
-![image](https://user-images.githubusercontent.com/70736001/122506358-2527a300-d039-11eb-84cb-62eb09687bda.png)
-
-1.부하테스트 전
-
-![image](https://user-images.githubusercontent.com/70736001/122506400-3c669080-d039-11eb-8e5e-a4f76b0e2956.png)
-
-2.부하테스트 후
-
-![image](https://user-images.githubusercontent.com/70736001/122506421-4be5d980-d039-11eb-92a2-44e7827299bf.png)
-
-3.readiness 정상 적용 후, Availability 100% 확인
-
-![image](https://user-images.githubusercontent.com/70736001/122506471-61f39a00-d039-11eb-9077-608f375e27f3.png)
-
+![readiness_siege_2](https://user-images.githubusercontent.com/84000919/124368026-af0d7800-dc97-11eb-97db-e60539d604b8.jpg)
 
 ## Self-healing (Liveness Probe)
 쿠버네티스는 각 컨테이너의 상태를 주기적으로 체크(Health Check)해서 문제가 있는 컨테이너는 자동으로재시작한다.
 
 - depolyment.yml 파일의 path 및 port를 잘못된 값으로 변경
-  depolyment.yml(BiddingManagement/kubernetes/deployment.yml)
+  depolyment.yml(rent/kubernetes/deployment.yml)
 ```
- livenessProbe:
-    httpGet:
-        path: '/biddingmanagement/failed'
-        port: 8090
-      initialDelaySeconds: 30
-      timeoutSeconds: 2
-      periodSeconds: 5
-      failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: '/rents/fail'
+              port: 8090
+            initialDelaySeconds: 30
+            timeoutSeconds: 2
+            periodSeconds: 5
+            failureThreshold: 5
 ```
 
-
-
-
-![image](https://user-images.githubusercontent.com/70736001/122506714-d75f6a80-d039-11eb-8bd0-223490797b58.png)
+![liveness_source](https://user-images.githubusercontent.com/84000919/124368435-0b729680-dc9c-11eb-888d-a267ed9d7fea.jpg)
 
 - liveness 설정 적용되어 컨테이너 재시작 되는 것을 확인
   Retry 시도 확인 (pod 생성 "RESTARTS" 숫자가 늘어나는 것을 확인) 
 
-1.배포 전
+![liveness_result](https://user-images.githubusercontent.com/84000919/124368416-dfefac00-dc9b-11eb-82a0-7fdd2034b2d1.jpg)
 
-![image](https://user-images.githubusercontent.com/70736001/122506797-fb22b080-d039-11eb-9a0b-754e0fea45b2.png)
-
-2.배포 후
-
-![image](https://user-images.githubusercontent.com/70736001/122506831-0c6bbd00-d03a-11eb-880c-dc8d3e00798f.png)
 
 ## Circuit Breaker
 서킷 브레이킹 프레임워크의 선택: Spring FeignClient + Hystrix 옵션을 사용하여 구현함
-시나리오는 심사결과등록(입찰심사:BiddingExamination)-->낙찰자정보등록(입찰관리:BiddingManagement) 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 낙찰자정보등록이 과도할 경우 CB 를 통하여 장애격리.
-
+시나리오는 책대여(대여관리:rent)-->도서상태확인및변경(도서관리:book) 시의 연결을 RESTful Request/Response 로 연동하여 구현이 되어있고, 책대여가 과도할 경우 CB 를 통하여 장애격리.
 
 - Hystrix 를 설정: 요청처리 쓰레드에서 처리시간이 1000ms가 넘어서기 시작하면 CB 작동하도록 설정
 
-**application.yml (BiddingExamination)**
+**application.yml (rent)**
 ```
 feign:
   hystrix:
@@ -947,10 +925,12 @@ hystrix:
     default:
       execution.isolation.thread.timeoutInMilliseconds: 1000
 ```
-![image](https://user-images.githubusercontent.com/70736001/122508631-3a9ecc00-d03d-11eb-9bce-a786225df40f.png)
 
-- 피호출 서비스(입찰관리:biddingmanagement) 의 임의 부하 처리 - 800ms에서 증감 300ms 정도하여 800~1100 ms 사이에서 발생하도록 처리
-BiddingManagementController.java
+![cb_source_1](https://user-images.githubusercontent.com/84000919/124368448-2218ed80-dc9c-11eb-885f-e056372b15a4.jpg)
+
+
+- 피호출 서비스(도서관리:book) 의 임의 부하 처리 - 800ms에서 증감 300ms 정도하여 800~1100 ms 사이에서 발생하도록 처리
+BookController.java
 ```
 req/res를 처리하는 피호출 function에 sleep 추가
 
@@ -960,12 +940,15 @@ req/res를 처리하는 피호출 function에 sleep 추가
 	   e.printStackTrace();
 	}
 ```
-![image](https://user-images.githubusercontent.com/70736001/122508689-5609d700-d03d-11eb-9e08-8eadc904d391.png)
 
-- req/res 호출하는 위치가 onPostUpdate에 있어 실제로 Data Update가 발생하지 않으면 호출이 되지 않는 문제가 있어 siege를 2개 실행하여 Update가 지속적으로 발생하게 처리 함
+![cb_source_2](https://user-images.githubusercontent.com/84000919/124368457-2c3aec00-dc9c-11eb-8675-876eb0abc4fc.jpg)
+
+
+- req/res 호출하는 rent에 부하를 발생하여 1000ms 이상 시간이 걸릴경우 CB 정상 동작 확인
 ```
-siege -c2 –t20S  -v --content-type "application/json" 'http://20.194.120.4:8080/biddingExaminations/1 PATCH {"noticeNo":"n01","participateNo":"p01","successBidderFlag":"true"}'
-siege -c2 –t20S  -v --content-type "application/json" 'http://20.194.120.4:8080/biddingExaminations/1 PATCH {"noticeNo":"n01","participateNo":"p01","successBidderFlag":"false"}'
+kubectl exec -it pod/siege  -c siege -n bookrent -- /bin/bash
+siege -c2 -t20S -v --content-type "application/json" 'http://rent:8080/rents POST {"bookId":1,"userId":1,"address":"address1"}'
 ```
 ![image](https://user-images.githubusercontent.com/70736001/122508763-7b96e080-d03d-11eb-90f8-8380277cdc17.png)
+
 
