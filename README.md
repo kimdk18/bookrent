@@ -640,26 +640,26 @@ http GET localhost:8084/views/1
 
 - GitHub 와 연결 후 로컬빌드를 진행 진행
 ```
-	cd clouddrive
-	mkdir sourcecode
-	cd sourcecode
-	git clone --recurse-submodules https://github.com/kimdk18/bookrent.git
+cd clouddrive
+mkdir sourcecode
+cd sourcecode
+git clone --recurse-submodules https://github.com/kimdk18/bookrent.git
 	
-	cd bookrent
-	cd book
-	mvn package
+cd bookrent
+cd book
+mvn package
 	
-	cd ../rent
-	mvn package
+cd ../rent
+mvn package
 	
-	cd ../delivery
-	mvn package
+cd ../delivery
+mvn package
 	
-	cd ../view
-	mvn package
+cd ../view
+mvn package
 		
-	cd ../gateway
-        mvn package
+cd ../gateway
+mvn package
 ```
 - namespace 등록 및 변경
 ```
@@ -703,25 +703,25 @@ az acr build --registry bookrentskccacr --image bookrentskccacr.azurecr.io/gatew
 
 4. 배포작업 수행
 ``` 
-	cd gateway/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
+cd gateway/kubernetes
+kubectl apply -f deployment.yml
+kubectl apply -f service.yaml
 	
-	cd ../../book/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
+cd ../../book/kubernetes
+kubectl apply -f deployment.yml
+kubectl apply -f service.yaml
 	
-	cd ../../rent/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
+cd ../../rent/kubernetes
+kubectl apply -f deployment.yml
+kubectl apply -f service.yaml
 	
-	cd ../../delivery/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
+cd ../../delivery/kubernetes
+kubectl apply -f deployment.yml
+kubectl apply -f service.yaml
 	
-	cd ../../view/kubernetes
-	kubectl apply -f deployment.yml
-	kubectl apply -f service.yaml
+cd ../../view/kubernetes
+kubectl apply -f deployment.yml
+kubectl apply -f service.yaml
 ``` 
 
 5. 배포결과 확인
