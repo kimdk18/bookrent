@@ -344,6 +344,7 @@ public interface DeliveryRepository extends PagingAndSortingRepository<Delivery,
 ![rent_post](https://user-images.githubusercontent.com/84000919/124358857-2bcf3080-dc5d-11eb-9e81-97826eb1b9c5.JPG)
 
 ### 2-1. 대여관리 등록 -> 대여상태 확인 및 변경(Sync)
+ - http GET localhost:8081/books/1
  - status = false로 변경 확인
 
 ![rent_post_book](https://user-images.githubusercontent.com/84000919/124358909-6df87200-dc5d-11eb-9b36-d1a9d25b1fb4.JPG)
