@@ -198,7 +198,7 @@ final assessment
 
 ### 헥사고날 아키텍처 다이어그램 도출
 
-![13  헥사고날 아키텍처 다이어그램 도출](https://user-images.githubusercontent.com/84000922/122162425-82dbb400-ceae-11eb-9e47-eef31b055935.png)
+![hexagonal](https://user-images.githubusercontent.com/84000919/124414323-7d76d880-dd8d-11eb-9f03-2608a8e9fdaa.jpg)
 
 
 
