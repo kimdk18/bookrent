@@ -350,7 +350,7 @@ public interface DeliveryRepository extends PagingAndSortingRepository<Delivery,
 ![rent_post_book](https://user-images.githubusercontent.com/84000919/124358909-6df87200-dc5d-11eb-9b36-d1a9d25b1fb4.JPG)
 
 ### 2-2. 대여관리 등록 -> 대여상태 확인 및 변경(Sync) 등록 실패 확인
- - book MSA kill 후 대여관리 오류 확인
+ - book kill 후 대여관리 오류 확인
  - http POST localhost:8082/rents bookId=1 userId=2 address=address2
 
 ![rent_book_kill_error](https://user-images.githubusercontent.com/84000919/124359037-27574780-dc5e-11eb-8b67-ad3176db9808.JPG)
