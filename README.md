@@ -417,7 +417,7 @@ public interface DeliveryRepository extends PagingAndSortingRepository<Delivery,
 
 분석단계에서의 조건 중 하나로 책대여(대여관리)->도서상태확인및변경(도서관리) 간의 호출은 동기식 일관성을 유지하는 트랜잭션으로 처리하기로 하였다. 호출 프로토콜은 이미 앞서 Rest Repository 에 의해 노출되어있는 REST 서비스를 FeignClient 를 이용하여 호출하도록 한다. 
 
-- (동기호출-Req)낙찰자정보 등록 서비스를 호출하기 위하여 Stub과 (FeignClient) 를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
+- (동기호출-Req)도서상태확인및변경(도서관리) 서비스를 호출하기 위하여 Stub과 FeignClient를 이용하여 Service 대행 인터페이스 (Proxy) 를 구현 
 ```
 # (rent) BookService.java
 
