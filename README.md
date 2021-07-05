@@ -344,22 +344,26 @@ public interface DeliveryRepository extends PagingAndSortingRepository<Delivery,
 ![rent_post](https://user-images.githubusercontent.com/84000919/124358857-2bcf3080-dc5d-11eb-9e81-97826eb1b9c5.JPG)
 
 ### 2-1. 대여관리 등록 -> 대여상태 확인 및 변경(Sync)
- - http GET localhost:8081/books/1
  - status = false로 변경 확인
+ - http GET localhost:8081/books/1
 
 ![rent_post_book](https://user-images.githubusercontent.com/84000919/124358909-6df87200-dc5d-11eb-9b36-d1a9d25b1fb4.JPG)
 
 ### 2-2. 대여관리 등록 -> 대여상태 확인 및 변경(Sync) 등록 실패 확인
  - book MSA kill 후 대여관리 오류 확인
+ - http POST localhost:8082/rents bookId=1 userId=2 address=address2
 
 ![rent_book_kill_error](https://user-images.githubusercontent.com/84000919/124359037-27574780-dc5e-11eb-8b67-ad3176db9808.JPG)
 
 ### 2-3. 대여관리 등록 -> 배송관리 등록(Async)
  - 배송관리 자동 등록 확인
+ - http GET localhost:8083/deliveries/1
 
 ![rent_post_delivery](https://user-images.githubusercontent.com/84000919/124358920-810b4200-dc5d-11eb-8d5e-9812d7bafe9a.JPG)
 
 ### 2-4. 조회 확인 (CQRS)
+ - http GET localhost:8084/views/1
+
 ![view_1](https://user-images.githubusercontent.com/84000919/124358964-b31ca400-dc5d-11eb-9c8c-8fea95f60a37.JPG)
 
 ### 3. 대여관리 취소
@@ -368,11 +372,17 @@ public interface DeliveryRepository extends PagingAndSortingRepository<Delivery,
 ![cancel_patch](https://user-images.githubusercontent.com/84000919/124358975-c92a6480-dc5d-11eb-99a5-adb441f448af.JPG)
 
 ### 3-1. 대여관리 취소 -> 배송관리 취소 -> 도서 상태 변경 (Async)
+ - http GET localhost:8083/deliveries/1
+
 ![cancel_patch_delivery](https://user-images.githubusercontent.com/84000919/124358986-dc3d3480-dc5d-11eb-91aa-e75bebdb6ff5.JPG)
+
+ - http GET localhost:8081/books/1
 
 ![cancel_patch_book](https://user-images.githubusercontent.com/84000919/124358988-de9f8e80-dc5d-11eb-979e-7bd3ac41207b.JPG)
 
 ### 3-2. 조회 확인 (CQRS)
+ - http GET localhost:8088/views/1
+
 ![view_2](https://user-images.githubusercontent.com/84000919/124358999-ef500480-dc5d-11eb-8fde-1517de13f581.JPG)
 
 ### 4. Gateway 확인
